@@ -1,8 +1,9 @@
 class AuthenticationMiddleware(object):
-    def __init__(self, app, username, password):
+    def __init__(self, app, username, password, only_restrict=None):
         self.app = app
         self.username = username
         self.password = password
+        self.only_restrict = only_restrict
 
     def __unauthorized(self, start_response):
         start_response('401 Unauthorized', [
@@ -13,6 +14,9 @@ class AuthenticationMiddleware(object):
         return ['You are unauthorized and forbidden to view this resource.']
 
     def __call__(self, environ, start_response):
+        if self.only_restrict and environ['PATH_INFO'] != self.only_restrict:
+            return self.app(environ, start_response)
+        
         authorization = environ.get('HTTP_AUTHORIZATION', None)
         if not authorization:
             return self.__unauthorized(start_response)
